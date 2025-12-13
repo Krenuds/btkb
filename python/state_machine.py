@@ -44,6 +44,7 @@ class EmoteStateMachine:
         self.cycle_interval = config.get("cycle_interval", 4.0)
         self.emotes = config.get("emotes", ["think2", "argue", "wait"])
         self.idle_emote = config.get("idle_emote", "wait")
+        self.return_to_idle = config.get("return_to_idle", True)
 
         self.fivem = fivem_driver
         self._state = EmoteState.IDLE
@@ -119,8 +120,8 @@ class EmoteStateMachine:
         self._execute_emote(emote)
 
     def _play_idle_emote(self):
-        """Play the idle/neutral emote."""
-        if self.idle_emote:
+        """Play the idle/neutral emote if return_to_idle is enabled."""
+        if self.return_to_idle and self.idle_emote:
             self._execute_emote(self.idle_emote)
 
     def _execute_emote(self, emote: str):

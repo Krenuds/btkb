@@ -18,6 +18,7 @@ DEFAULTS = {
         "cycle_interval": 4.0,
         "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient"],
         "idle_emote": "wait",
+        "return_to_idle": True,
     },
     "keyword_triggers": {
         "cooldown": 3.0,

@@ -7,32 +7,43 @@
   "talking_mode": {
     "cycle_interval": 4.0,
     "emotes": [
-      "impatient",
+      "hi",
       "argue",
       "what",
-      "taunt",
+      "yes",
       "beg",
       "impatient",
-      "nervous"],
-    "idle_emote": "wait11"
+      "shrug3"],
+    "idle_emote": "wait11",
+    "return_to_idle": false
   },
   "keyword_triggers": {
     "cooldown": 3.0,
     "groups": [
       {"triggers": ["yes", "yeah", "yep", "yup"], "emotes": ["yes"]},
-      {"triggers": ["no", "nope", "nah"], "emotes": ["no", "no2"]},
-      {"triggers": ["binoculars, zoom"], "emotes": ["binoculars"]},
+      {"triggers": ["no", "nope", "nah"], "emotes": ["no", "no2", "forgetit"]},
       {"triggers": ["build", "fix"], "emotes": ["hammering"]},
       {"triggers": ["garden", "plant", "plants"], "emotes": ["gardening"]},
       {"triggers": ["clean", "wash", "dirty"], "emotes": ["wash"]},
       {"triggers": ["knees"], "emotes": ["medic", "kneel"]},
       {"triggers": ["traffic", "hold", "halt"], "emotes": ["traffic"]},
-      {"triggers": ["exercise", "workout", "strong", "pushups"], "emotes": ["pushups"]},
       {"triggers": ["party", "celebrate", "woo", "woohoo"], "emotes": ["party"]},
       {"triggers": ["smoke", "chill", "relax", "cigarette"], "emotes": ["smoke"]},
       {"triggers": ["yay", "awesome", "nice", "great"], "emotes": ["cheer"]},
       {"triggers": ["sir", "ma'am", "commander", "boss"], "emotes": ["salute"]},
-      {"triggers": ["tired", "stretch", "sleepy", "yawn"], "emotes": ["stretch"]}
+      {"triggers": ["stretch"], "emotes": ["stretch"]},
+      {"triggers": ["shine", "torch", "flashlight"], "emotes": ["shinetorch"]},
+      {"triggers": ["high five", "high 5"], "emotes": ["high5"]},
+      {"triggers": ["slap", "behind"], "emotes": ["slap"]},
+      {"triggers": ["fuck you", "fuck off", "screw you"], "emotes": ["fuckyou"]},
+      {"triggers": ["piss", "pee", "urinate"], "emotes": ["piss"]},
+      {"triggers": ["maybe"], "emotes": ["shrug3"]},
+      {"triggers": ["dab"], "emotes": ["dab"]},
+      {"triggers": ["karate", "martial arts"], "emotes": ["karate"]},
+      {"triggers": ["surprise", "present"], "emotes": ["finger","finger2"]},
+      {"triggers": ["finger two", "finger 2", "double finger"], "emotes": ["finger2"]},
+      {"triggers": ["mental", "hypnotize"], "emotes": ["mindcontrol", "mindcontrol2", "mindcontrol3"]},
+      {"triggers": ["drill", "drilling"], "emotes": ["drill"]}
     ]
   }
 }
