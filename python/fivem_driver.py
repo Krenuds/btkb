@@ -63,21 +63,21 @@ class FiveMDriver:
 
         # Press T to open console
         self._bighead.press("T")
-        time.sleep(0.1)
+        time.sleep(0.05)
         self._bighead.release("T")
-        time.sleep(0.3)  # Wait for console to open
+        time.sleep(0.15)  # Wait for console to open
 
         # Ctrl+V to paste
         self._bighead.press("CTRL")
-        time.sleep(0.05)
+        time.sleep(0.02)
         self._bighead.key("V")
-        time.sleep(0.05)
+        time.sleep(0.02)
         self._bighead.release("CTRL")
-        time.sleep(0.1)
+        time.sleep(0.03)
 
         # Enter to submit
         self._bighead.key("ENTER")
-        time.sleep(0.1)
+        time.sleep(0.03)
         self._bighead.release_all()
 
     def emote(self, name):

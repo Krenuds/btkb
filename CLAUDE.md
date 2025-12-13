@@ -2,28 +2,59 @@
 
 ## Project Overview
 
-**Bighead** is an ESP32 Bluetooth HID keyboard that enables programmatic keystroke injection. The primary use case is a **FiveM slash command driver** for triggering emotes and other in-game commands via Python scripts.
+**Bighead** is a voice-controlled emote system for FiveM. Speak a trigger word, and your character performs the corresponding emote.
 
-### Architecture
+### How It Works
 
 ```
-Python Script  ──(Serial/USB)──▶  ESP32  ──(Bluetooth HID)──▶  Windows/FiveM
+Microphone ──▶ STT (Whisper/CUDA) ──▶ Keyword Match ──▶ FiveMDriver ──▶ ESP32 BLE ──▶ FiveM
 ```
 
-- **ESP32 Firmware** (`src/main.cpp`): BLE keyboard that accepts serial commands
-- **Python Driver** (`python/fivem_driver.py`): High-level API for FiveM commands
-- **Device Name**: "Bighead" (appears in Windows Bluetooth settings)
+1. **Listen**: Microphone captures audio in real-time
+2. **Transcribe**: GPU-accelerated Whisper converts speech to text
+3. **Match**: Keywords trigger specific emotes (e.g., "dance" -> `/e dance`)
+4. **Send**: ESP32 Bluetooth keyboard injects the command into FiveM
+
+## Architecture
+
+| Layer | File | Purpose |
+|-------|------|---------|
+| Speech-to-Text | `python/stt.py` | Real-time transcription with faster-whisper on CUDA |
+| Emote Mapping | `python/stt.py` | Keyword -> emote trigger logic with cooldowns |
+| FiveM Driver | `python/fivem_driver.py` | Clipboard-paste slash commands via BLE keyboard |
+| Device Handler | `python/bighead.py` | Serial connection to ESP32 with auto-detection |
+| Orchestrator | `python/main.py` | Entry point that ties components together |
+| Firmware | `src/main.cpp` | ESP32 BLE keyboard accepting serial commands |
 
 ## Quick Start
 
+**Voice-triggered emotes:**
+```bash
+cd python
+python stt.py --emotes
+```
+
+**Manual emote testing:**
 ```python
 from fivem_driver import FiveMDriver
 
 with FiveMDriver() as fm:
     fm.emote("dance3")  # /e dance3
     fm.emote("sit")     # /e sit
-    fm.slash("fly")     # /fly
 ```
+
+## Voice Triggers
+
+Say these words to trigger emotes:
+
+| Word | Emote | Word | Emote |
+|------|-------|------|-------|
+| dance | dance | sit | sit |
+| wave | waves | yes | yes |
+| no | no | think | think2 |
+| wait | wait | beg | beg |
+| argue | argue | punch | punching |
+| notepad | notepad | impatient | impatient |
 
 ## Build Commands
 
@@ -31,75 +62,49 @@ with FiveMDriver() as fm:
 |---------|-------------|
 | `pio run` | Build firmware |
 | `pio run --target upload` | Flash to ESP32 |
-| `pio device monitor` | Serial monitor |
-| `pio run --target upload && pio device monitor` | Build, flash, monitor |
+| `python python/stt.py --emotes` | Run voice-triggered emotes |
+| `python python/stt.py` | Test STT only |
+
+## Hardware
+
+- **ESP32**: BLE keyboard (device name "Bighead")
+- **Serial**: 115200 baud, auto-detected COM port
+- **GPU**: NVIDIA GPU with CUDA for Whisper acceleration
+
+## Dependencies
+
+```bash
+pip install faster-whisper pyaudio numpy pyperclip pyserial nvidia-cudnn-cu12==9.1.0.70
+```
 
 ## Serial Protocol
 
-Commands are sent over serial (115200 baud) with newline terminator.
+The ESP32 accepts commands over serial (115200 baud):
 
-### Keyboard Commands
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `KEY:X` | Press and release key | `KEY:ENTER` |
-| `PRESS:X` | Press and hold | `PRESS:CTRL` |
-| `RELEASE:X` | Release held key | `RELEASE:CTRL` |
-| `RELEASEALL` | Release all keys | |
-| `TEXT:abc` | Type text (25ms/char) | `TEXT:hello` |
-| `DELAY:ms` | Wait milliseconds | `DELAY:500` |
-| `STATUS` | Check BLE connection | |
-
-### Supported Keys
-
-- **Letters**: A-Z (sent as lowercase)
-- **Numbers**: 0-9
-- **Modifiers**: CTRL, SHIFT, ALT, GUI/WIN
-- **Navigation**: UP, DOWN, LEFT, RIGHT, HOME, END, PAGEUP, PAGEDOWN
-- **Function**: F1-F12
-- **Special**: ENTER, TAB, SPACE, BACKSPACE, DELETE, ESC, INSERT, CAPSLOCK
-
-### Response Codes
-
-| Response | Meaning |
-|----------|---------|
-| `OK:READY` | Firmware started |
-| `OK:CONNECTED` | Bluetooth connected |
-| `OK:DISCONNECTED` | Bluetooth disconnected |
-| `OK:KEY_SENT` | Key command executed |
-| `ERROR:NOT_CONNECTED` | No Bluetooth connection |
-| `ERROR:INVALID_KEYCODE` | Unknown key name |
-
-## FiveM Command Flow
-
-The slash command process:
-1. Copy command to Windows clipboard (pyperclip)
-2. Press `T` to open FiveM console
-3. `Ctrl+V` to paste command
-4. `Enter` to submit
-5. `RELEASEALL` to prevent stuck keys
+| Command | Description |
+|---------|-------------|
+| `KEY:X` | Press and release key |
+| `PRESS:X` / `RELEASE:X` | Hold/release key |
+| `TEXT:abc` | Type text (25ms/char) |
+| `STATUS` | Check BLE connection |
 
 ## Project Structure
 
 ```
 btkb/
-├── src/main.cpp           # ESP32 firmware
+├── src/main.cpp           # ESP32 BLE keyboard firmware
 ├── python/
+│   ├── stt.py             # Real-time speech-to-text + emote triggers
 │   ├── fivem_driver.py    # FiveM slash command driver
-│   ├── dance.py           # Single emote example
-│   └── testCommand.py     # Multi-command example
+│   ├── bighead.py         # ESP32 serial connection handler
+│   ├── main.py            # Orchestrator entry point
+│   └── emotes.json        # Available emote list
 ├── platformio.ini         # PlatformIO config
 └── CLAUDE.md              # This file
 ```
 
-## Hardware
-
-- **Board**: ESP32 Dev Module (ESP-WROOM-32)
-- **Serial**: 115200 baud (USB), COM9 default on Windows
-- **BLE Library**: ESP32-BLE-Keyboard
-
 ## Known Limitations
 
-- BLE keyboard works for text input but may not trigger DirectInput/Raw Input game controls
-- FiveM console (`T` key) works because it's a standard text input field
-- Movement keys (WASD) during gameplay may not work due to anti-cheat input handling
+- Whisper "tiny" model trades accuracy for speed (~30-300ms latency)
+- FiveM console input works; direct gameplay controls (WASD) may not due to anti-cheat
+- Requires NVIDIA GPU with CUDA for real-time performance
