@@ -83,6 +83,27 @@ class EmoteStateMachine:
                 print(f"[{time.time():.3f}] [STATE] TALKING -> IDLE")
                 self._play_idle_emote()
 
+    def trigger_keyword_emote(self, emote: str):
+        """
+        Trigger a specific emote from keyword match.
+
+        Keywords take priority - if in IDLE, transitions to TALKING first.
+        Plays the emote immediately and resets the cycle timer.
+
+        Args:
+            emote: The emote name to play
+        """
+        with self._lock:
+            if self._state == EmoteState.IDLE:
+                # Force transition to TALKING for keyword
+                self._state = EmoteState.TALKING
+                print(f"[{time.time():.3f}] [STATE] IDLE -> TALKING (keyword)")
+
+            self._cancel_timer()
+            print(f"[{time.time():.3f}] [KEYWORD] -> /e {emote}")
+            self._execute_emote(emote)
+            self._schedule_next_cycle()
+
     def _play_random_emote(self):
         """Play a random emote from the configured list."""
         if not self.emotes:

@@ -12,10 +12,11 @@ Usage:
 import sys
 import time
 
-from config_loader import load_config, get_vad_config, get_talking_mode_config
+from config_loader import load_config, get_vad_config, get_talking_mode_config, get_keyword_config
 from vad import VADEngine
 from state_machine import EmoteStateMachine
-from stt import AudioCapture
+from stt import AudioCapture, RealtimeSTT
+from keyword_matcher import KeywordMatcher
 from fivem_driver import FiveMDriver
 
 
@@ -26,6 +27,8 @@ class VoiceEmoteOrchestrator:
     Wires together:
     - AudioCapture: Microphone input
     - VADEngine: Voice activity detection
+    - RealtimeSTT: Speech-to-text transcription
+    - KeywordMatcher: Keyword-to-emote matching
     - EmoteStateMachine: State management and emote scheduling
     - FiveMDriver: Emote execution via ESP32
     """
@@ -43,6 +46,8 @@ class VoiceEmoteOrchestrator:
 
         self.fivem = None
         self.vad = None
+        self.stt = None
+        self.keyword_matcher = None
         self.state_machine = None
         self.audio_capture = None
 
@@ -54,23 +59,23 @@ class VoiceEmoteOrchestrator:
 
         # 1. Connect to ESP32 (unless in test mode)
         if not self.test_mode:
-            print("\n[1/4] Connecting to ESP32...")
+            print("\n[1/6] Connecting to ESP32...")
             self.fivem = FiveMDriver()
             self.fivem.connect()
             print(f"      Connected: {self.fivem.bighead.port}")
         else:
-            print("\n[1/4] Test mode - skipping ESP32 connection")
+            print("\n[1/6] Test mode - skipping ESP32 connection")
             self.fivem = None
 
         # 2. Initialize state machine
-        print("[2/4] Initializing state machine...")
+        print("[2/6] Initializing state machine...")
         talking_config = get_talking_mode_config(self.config)
         self.state_machine = EmoteStateMachine(talking_config, self.fivem)
-        print(f"      Emotes: {', '.join(talking_config['emotes'])}")
+        print(f"      Fallback emotes: {', '.join(talking_config['emotes'])}")
         print(f"      Cycle interval: {talking_config['cycle_interval']}s")
 
         # 3. Initialize VAD
-        print("[3/4] Loading VAD model...")
+        print("[3/6] Loading VAD model...")
         vad_config = get_vad_config(self.config)
         self.vad = VADEngine(
             vad_config,
@@ -79,9 +84,24 @@ class VoiceEmoteOrchestrator:
         )
         self.vad.load_model()
 
-        # 4. Start audio capture
-        print("[4/4] Starting audio capture...")
-        self.audio_capture = AudioCapture(callbacks=[self.vad.process])
+        # 4. Initialize STT
+        print("[4/6] Loading STT model (Whisper)...")
+        self.stt = RealtimeSTT(model_size="tiny")
+        self.stt.start()
+
+        # 5. Initialize keyword matcher
+        print("[5/6] Initializing keyword matcher...")
+        keyword_config = get_keyword_config(self.config)
+        self.keyword_matcher = KeywordMatcher(keyword_config)
+        groups = keyword_config.get("groups", [])
+        for group in groups:
+            triggers = ", ".join(group.get("triggers", []))
+            emotes = ", ".join(group.get("emotes", []))
+            print(f"      [{triggers}] -> [{emotes}]")
+
+        # 6. Start audio capture (feeds both VAD and STT)
+        print("[6/6] Starting audio capture...")
+        self.audio_capture = AudioCapture(callbacks=[self.vad.process, self.stt.feed])
 
         # List available devices
         print("\n      Available microphones:")
@@ -98,7 +118,15 @@ class VoiceEmoteOrchestrator:
         """Run the main loop (blocks until interrupted)."""
         try:
             while True:
-                time.sleep(0.1)
+                # Poll STT for transcriptions
+                result = self.stt.get(timeout=0.1)
+                if result:
+                    text, latency = result
+                    # Check for keyword triggers
+                    emote = self.keyword_matcher.match(text)
+                    if emote:
+                        print(f"[{time.time():.3f}] [STT] '{text}' ({latency*1000:.0f}ms)")
+                        self.state_machine.trigger_keyword_emote(emote)
         except KeyboardInterrupt:
             print("\n\nShutting down...")
 
@@ -106,6 +134,8 @@ class VoiceEmoteOrchestrator:
         """Stop all components and clean up."""
         if self.audio_capture:
             self.audio_capture.stop()
+        if self.stt:
+            self.stt.stop()
         if self.state_machine:
             self.state_machine.stop()
         if self.fivem:

@@ -7,17 +7,32 @@
   "talking_mode": {
     "cycle_interval": 4.0,
     "emotes": [
-      "impatient", 
-      "argue", 
-      "what", 
-      "taunt", 
+      "impatient",
+      "argue",
+      "what",
+      "taunt",
       "beg",
-      "impatient", 
-      "yes", 
+      "impatient",
       "nervous"],
     "idle_emote": "wait11"
   },
-  "defaults": {
-    "emote_duration": 4.0
+  "keyword_triggers": {
+    "cooldown": 3.0,
+    "groups": [
+      {"triggers": ["yes", "yeah", "yep", "yup"], "emotes": ["yes"]},
+      {"triggers": ["no", "nope", "nah"], "emotes": ["no", "no2"]},
+      {"triggers": ["binoculars, zoom"], "emotes": ["binoculars"]},
+      {"triggers": ["build", "fix"], "emotes": ["hammering"]},
+      {"triggers": ["garden", "plant", "plants"], "emotes": ["gardening"]},
+      {"triggers": ["clean", "wash", "dirty"], "emotes": ["wash"]},
+      {"triggers": ["knees"], "emotes": ["medic", "kneel"]},
+      {"triggers": ["traffic", "hold", "halt"], "emotes": ["traffic"]},
+      {"triggers": ["exercise", "workout", "strong", "pushups"], "emotes": ["pushups"]},
+      {"triggers": ["party", "celebrate", "woo", "woohoo"], "emotes": ["party"]},
+      {"triggers": ["smoke", "chill", "relax", "cigarette"], "emotes": ["smoke"]},
+      {"triggers": ["yay", "awesome", "nice", "great"], "emotes": ["cheer"]},
+      {"triggers": ["sir", "ma'am", "commander", "boss"], "emotes": ["salute"]},
+      {"triggers": ["tired", "stretch", "sleepy", "yawn"], "emotes": ["stretch"]}
+    ]
   }
 }

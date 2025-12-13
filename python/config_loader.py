@@ -16,8 +16,15 @@ DEFAULTS = {
     },
     "talking_mode": {
         "cycle_interval": 4.0,
-        "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient", "yes", "no"],
+        "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient"],
         "idle_emote": "wait",
+    },
+    "keyword_triggers": {
+        "cooldown": 3.0,
+        "groups": [
+            {"triggers": ["yes", "yeah", "yep", "yup"], "emotes": ["yes"]},
+            {"triggers": ["no", "nope", "nah"], "emotes": ["no", "no2"]},
+        ],
     },
 }
 
@@ -71,6 +78,11 @@ def get_vad_config(config: dict) -> dict:
 def get_talking_mode_config(config: dict) -> dict:
     """Extract talking mode config."""
     return config.get("talking_mode", DEFAULTS["talking_mode"])
+
+
+def get_keyword_config(config: dict) -> dict:
+    """Extract keyword triggers config."""
+    return config.get("keyword_triggers", DEFAULTS["keyword_triggers"])
 
 
 if __name__ == "__main__":
