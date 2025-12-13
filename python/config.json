@@ -6,8 +6,16 @@
   },
   "talking_mode": {
     "cycle_interval": 4.0,
-    "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient", "yes", "no"],
-    "idle_emote": "wait"
+    "emotes": [
+      "impatient", 
+      "argue", 
+      "what", 
+      "taunt", 
+      "beg",
+      "impatient", 
+      "yes", 
+      "nervous"],
+    "idle_emote": "wait11"
   },
   "defaults": {
     "emote_duration": 4.0
