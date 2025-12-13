@@ -2,7 +2,7 @@
   "vad": {
     "threshold": 0.5,
     "min_speech_ms": 250,
-    "min_silence_ms": 500
+    "min_silence_ms": 2000
   },
   "talking_mode": {
     "cycle_interval": 4.0,

@@ -66,7 +66,7 @@ class EmoteStateMachine:
         with self._lock:
             if self._state == EmoteState.IDLE:
                 self._state = EmoteState.TALKING
-                print(f"[STATE] IDLE -> TALKING")
+                print(f"[{time.time():.3f}] [STATE] IDLE -> TALKING")
                 self._play_random_emote()
                 self._schedule_next_cycle()
 
@@ -80,7 +80,7 @@ class EmoteStateMachine:
             if self._state == EmoteState.TALKING:
                 self._cancel_timer()
                 self._state = EmoteState.IDLE
-                print(f"[STATE] TALKING -> IDLE")
+                print(f"[{time.time():.3f}] [STATE] TALKING -> IDLE")
                 self._play_idle_emote()
 
     def _play_random_emote(self):
@@ -105,11 +105,11 @@ class EmoteStateMachine:
     def _execute_emote(self, emote: str):
         """Execute an emote via FiveMDriver."""
         try:
-            print(f"[EMOTE] /e {emote}")
+            print(f"[{time.time():.3f}] [EMOTE] /e {emote}")
             if self.fivem:
                 self.fivem.emote(emote)
         except Exception as e:
-            print(f"[ERROR] Failed to execute emote '{emote}': {e}")
+            print(f"[{time.time():.3f}] [ERROR] Failed to execute emote '{emote}': {e}")
 
     def _schedule_next_cycle(self):
         """Schedule the next emote cycle."""
