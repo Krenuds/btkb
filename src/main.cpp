@@ -20,6 +20,9 @@ void handlePressCommand(String keyName);
 void handleReleaseCommand(String keyName);
 void handleMediaCommand(String action);
 void handleStatusCommand();
+void handleRawCommand(String code);
+void handleRawPressCommand(String code);
+void handleRawReleaseCommand(String code);
 uint8_t getKeyCode(String keyName);
 const MediaKeyReport* getMediaKeyCode(String action);
 
@@ -124,6 +127,27 @@ void processCommand(String command) {
         }
         handleMediaCommand(command.substring(6));
     }
+    else if (command.startsWith("RAW:")) {
+        if (!bleKeyboard.isConnected()) {
+            Serial.println("ERROR:NOT_CONNECTED");
+            return;
+        }
+        handleRawCommand(command.substring(4));
+    }
+    else if (command.startsWith("RAWPRESS:")) {
+        if (!bleKeyboard.isConnected()) {
+            Serial.println("ERROR:NOT_CONNECTED");
+            return;
+        }
+        handleRawPressCommand(command.substring(9));
+    }
+    else if (command.startsWith("RAWRELEASE:")) {
+        if (!bleKeyboard.isConnected()) {
+            Serial.println("ERROR:NOT_CONNECTED");
+            return;
+        }
+        handleRawReleaseCommand(command.substring(11));
+    }
     else if (command.startsWith("DELAY:")) {
         // DELAY can work even when not connected
         String delayStr = command.substring(6);
@@ -209,6 +233,61 @@ void handleStatusCommand() {
         Serial.println("OK:CONNECTED");
     } else {
         Serial.println("OK:DISCONNECTED");
+    }
+}
+
+void handleRawCommand(String code) {
+    code.trim();
+    uint8_t scanCode;
+
+    // Parse hex (0x17) or decimal (23)
+    if (code.startsWith("0X")) {
+        scanCode = (uint8_t)strtol(code.c_str(), NULL, 16);
+    } else {
+        scanCode = (uint8_t)code.toInt();
+    }
+
+    if (scanCode > 0) {
+        bleKeyboard.write(scanCode);
+        Serial.println("OK:RAW_SENT");
+    } else {
+        Serial.println("ERROR:INVALID_SCANCODE");
+    }
+}
+
+void handleRawPressCommand(String code) {
+    code.trim();
+    uint8_t scanCode;
+
+    if (code.startsWith("0X")) {
+        scanCode = (uint8_t)strtol(code.c_str(), NULL, 16);
+    } else {
+        scanCode = (uint8_t)code.toInt();
+    }
+
+    if (scanCode > 0) {
+        bleKeyboard.press(scanCode);
+        Serial.println("OK:RAW_PRESSED");
+    } else {
+        Serial.println("ERROR:INVALID_SCANCODE");
+    }
+}
+
+void handleRawReleaseCommand(String code) {
+    code.trim();
+    uint8_t scanCode;
+
+    if (code.startsWith("0X")) {
+        scanCode = (uint8_t)strtol(code.c_str(), NULL, 16);
+    } else {
+        scanCode = (uint8_t)code.toInt();
+    }
+
+    if (scanCode > 0) {
+        bleKeyboard.release(scanCode);
+        Serial.println("OK:RAW_RELEASED");
+    } else {
+        Serial.println("ERROR:INVALID_SCANCODE");
     }
 }
 
