@@ -19,9 +19,6 @@ DEFAULTS = {
         "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient", "yes", "no"],
         "idle_emote": "wait",
     },
-    "defaults": {
-        "emote_duration": 4.0,
-    },
 }
 
 
