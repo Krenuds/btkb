@@ -1,42 +1,50 @@
 """
 FiveM Slash Command Driver
 
-Sends slash commands to FiveM via ESP32 Bluetooth keyboard.
+Sends slash commands to FiveM via the Bighead ESP32 Bluetooth keyboard.
 Primarily used for emotes (/e dance, /e sit3, etc.) but supports any slash command.
 """
 
-import serial
 import time
 import pyperclip
+
+from bighead import Bighead
 
 
 class FiveMDriver:
     """Driver for sending slash commands to FiveM."""
 
-    def __init__(self, port="COM9", baud=115200):
-        self.port = port
-        self.baud = baud
-        self.ser = None
+    def __init__(self, bighead=None, port=None, baud=115200):
+        """
+        Initialize FiveM driver.
+
+        Args:
+            bighead: Existing Bighead connection (optional)
+            port: Serial port if creating new connection (auto-detected if None)
+            baud: Baud rate if creating new connection
+        """
+        self._owns_connection = bighead is None
+        self._bighead = bighead
+        self._port = port
+        self._baud = baud
+
+    @property
+    def bighead(self):
+        """Get the Bighead connection."""
+        return self._bighead
 
     def connect(self):
         """Connect to the ESP32 BLE keyboard."""
-        self.ser = serial.Serial(self.port, self.baud, timeout=2)
-        time.sleep(2)  # Wait for BLE to stabilize
-        self.ser.reset_input_buffer()
-        self._send("RELEASEALL")  # Clear any stuck keys
+        if self._owns_connection:
+            self._bighead = Bighead(self._port, self._baud)
+            self._bighead.connect()
         return self
 
     def disconnect(self):
-        """Disconnect and release all keys."""
-        if self.ser:
-            self._send("RELEASEALL")
-            self.ser.close()
-            self.ser = None
-
-    def _send(self, cmd):
-        """Send a command to the ESP32."""
-        self.ser.write(f"{cmd}\n".encode())
-        return self.ser.readline().decode().strip()
+        """Disconnect if we own the connection."""
+        if self._owns_connection and self._bighead:
+            self._bighead.disconnect()
+            self._bighead = None
 
     def slash(self, command):
         """
@@ -54,23 +62,23 @@ class FiveMDriver:
         pyperclip.copy(command)
 
         # Press T to open console
-        self._send("PRESS:T")
+        self._bighead.press("T")
         time.sleep(0.1)
-        self._send("RELEASE:T")
+        self._bighead.release("T")
         time.sleep(0.3)  # Wait for console to open
 
         # Ctrl+V to paste
-        self._send("PRESS:CTRL")
+        self._bighead.press("CTRL")
         time.sleep(0.05)
-        self._send("KEY:V")
+        self._bighead.key("V")
         time.sleep(0.05)
-        self._send("RELEASE:CTRL")
+        self._bighead.release("CTRL")
         time.sleep(0.1)
 
         # Enter to submit
-        self._send("KEY:ENTER")
+        self._bighead.key("ENTER")
         time.sleep(0.1)
-        self._send("RELEASEALL")
+        self._bighead.release_all()
 
     def emote(self, name):
         """
