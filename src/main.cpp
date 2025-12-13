@@ -147,7 +147,12 @@ void processCommand(String command) {
 }
 
 void handleTextCommand(String text) {
-    bleKeyboard.print(text);
+    // Send characters one at a time with small delay to prevent BLE buffer issues
+    for (unsigned int i = 0; i < text.length(); i++) {
+        bleKeyboard.print(text[i]);
+        delay(25);  // 25ms delay = 40 chars/sec
+    }
+    bleKeyboard.releaseAll();  // Ensure no keys stuck
     Serial.println("OK:TYPED");
 }
 
