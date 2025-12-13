@@ -1,0 +1,83 @@
+"""
+Configuration loader for the voice-controlled emote system.
+
+Loads config.json and provides defaults for missing values.
+"""
+
+import json
+import os
+
+# Default configuration (used when config.json is missing or incomplete)
+DEFAULTS = {
+    "vad": {
+        "threshold": 0.5,
+        "min_speech_ms": 250,
+        "min_silence_ms": 500,
+    },
+    "talking_mode": {
+        "cycle_interval": 4.0,
+        "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient", "yes", "no"],
+        "idle_emote": "wait",
+    },
+    "defaults": {
+        "emote_duration": 4.0,
+    },
+}
+
+
+def deep_merge(base: dict, override: dict) -> dict:
+    """Recursively merge override into base, returning a new dict."""
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def load_config(path: str = None) -> dict:
+    """
+    Load configuration from JSON file, falling back to defaults.
+
+    Args:
+        path: Path to config.json. If None, looks in same directory as this module.
+
+    Returns:
+        Configuration dict with all values populated (defaults + overrides).
+    """
+    if path is None:
+        path = os.path.join(os.path.dirname(__file__), "config.json")
+
+    config = DEFAULTS.copy()
+
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                user_config = json.load(f)
+            config = deep_merge(DEFAULTS, user_config)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Warning: Could not load {path}: {e}")
+            print("Using default configuration.")
+    else:
+        print(f"Config file not found: {path}")
+        print("Using default configuration.")
+
+    return config
+
+
+def get_vad_config(config: dict) -> dict:
+    """Extract VAD-specific config."""
+    return config.get("vad", DEFAULTS["vad"])
+
+
+def get_talking_mode_config(config: dict) -> dict:
+    """Extract talking mode config."""
+    return config.get("talking_mode", DEFAULTS["talking_mode"])
+
+
+if __name__ == "__main__":
+    # Test loading
+    cfg = load_config()
+    print("Loaded configuration:")
+    print(json.dumps(cfg, indent=2))

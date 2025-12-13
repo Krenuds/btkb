@@ -2,36 +2,49 @@
 
 ## Project Overview
 
-**Bighead** is a voice-controlled emote system for FiveM. Speak a trigger word, and your character performs the corresponding emote.
+**Bighead** is a voice-controlled emote system for FiveM. When you speak, your character cycles through conversational emotes automatically.
 
 ### How It Works
 
 ```
-Microphone ──▶ STT (Whisper/CUDA) ──▶ Keyword Match ──▶ FiveMDriver ──▶ ESP32 BLE ──▶ FiveM
+Microphone ──▶ VAD (Silero) ──▶ State Machine ──▶ FiveMDriver ──▶ ESP32 BLE ──▶ FiveM
 ```
 
 1. **Listen**: Microphone captures audio in real-time
-2. **Transcribe**: GPU-accelerated Whisper converts speech to text
-3. **Match**: Keywords trigger specific emotes (e.g., "dance" -> `/e dance`)
-4. **Send**: ESP32 Bluetooth keyboard injects the command into FiveM
+2. **Detect**: Silero VAD detects when you start/stop speaking
+3. **Animate**: State machine cycles through random emotes while talking
+4. **Send**: ESP32 Bluetooth keyboard injects commands into FiveM
 
 ## Architecture
 
 | Layer | File | Purpose |
 |-------|------|---------|
-| Speech-to-Text | `python/stt.py` | Real-time transcription with faster-whisper on CUDA |
-| Emote Mapping | `python/stt.py` | Keyword -> emote trigger logic with cooldowns |
-| FiveM Driver | `python/fivem_driver.py` | Clipboard-paste slash commands via BLE keyboard |
-| Device Handler | `python/bighead.py` | Serial connection to ESP32 with auto-detection |
-| Orchestrator | `python/main.py` | Entry point that ties components together |
-| Firmware | `src/main.cpp` | ESP32 BLE keyboard accepting serial commands |
+| Config | `python/config.json` | VAD thresholds, emote list, timing |
+| Config Loader | `python/config_loader.py` | Load config with defaults |
+| Voice Detection | `python/vad.py` | Silero VAD with speech start/end callbacks |
+| State Machine | `python/state_machine.py` | IDLE/TALKING states, emote cycling |
+| Audio Capture | `python/stt.py` | Microphone input via PyAudio |
+| FiveM Driver | `python/fivem_driver.py` | Clipboard-paste slash commands |
+| Device Handler | `python/bighead.py` | Serial connection to ESP32 |
+| Orchestrator | `python/main.py` | Entry point wiring all components |
+| Firmware | `src/main.cpp` | ESP32 BLE keyboard firmware |
 
 ## Quick Start
 
-**Voice-triggered emotes:**
+**Run voice-controlled emotes:**
 ```bash
 cd python
-python stt.py --emotes
+python main.py
+```
+
+**Test mode (no ESP32):**
+```bash
+python main.py --test
+```
+
+**Test VAD standalone:**
+```bash
+python vad.py
 ```
 
 **Manual emote testing:**
@@ -43,18 +56,24 @@ with FiveMDriver() as fm:
     fm.emote("sit")     # /e sit
 ```
 
-## Voice Triggers
+## Configuration
 
-Say these words to trigger emotes:
+Edit `python/config.json`:
 
-| Word | Emote | Word | Emote |
-|------|-------|------|-------|
-| dance | dance | sit | sit |
-| wave | waves | yes | yes |
-| no | no | think | think2 |
-| wait | wait | beg | beg |
-| argue | argue | punch | punching |
-| notepad | notepad | impatient | impatient |
+```json
+{
+  "vad": {
+    "threshold": 0.5,         // Speech detection sensitivity (0-1)
+    "min_speech_ms": 250,     // Min speech before triggering
+    "min_silence_ms": 500     // Min silence before stopping
+  },
+  "talking_mode": {
+    "cycle_interval": 4.0,    // Seconds between emote changes
+    "emotes": ["think2", "argue", "what", "wait"],
+    "idle_emote": "wait"      // Emote when speech ends
+  }
+}
+```
 
 ## Build Commands
 
@@ -62,19 +81,20 @@ Say these words to trigger emotes:
 |---------|-------------|
 | `pio run` | Build firmware |
 | `pio run --target upload` | Flash to ESP32 |
-| `python python/stt.py --emotes` | Run voice-triggered emotes |
-| `python python/stt.py` | Test STT only |
+| `python python/main.py` | Run voice-controlled emotes |
+| `python python/main.py --test` | Test without ESP32 |
+| `python python/vad.py` | Test VAD only |
 
 ## Hardware
 
 - **ESP32**: BLE keyboard (device name "Bighead")
 - **Serial**: 115200 baud, auto-detected COM port
-- **GPU**: NVIDIA GPU with CUDA for Whisper acceleration
+- **GPU**: Not required (VAD runs on CPU)
 
 ## Dependencies
 
 ```bash
-pip install faster-whisper pyaudio numpy pyperclip pyserial nvidia-cudnn-cu12==9.1.0.70
+pip install pyaudio numpy pyperclip pyserial torch
 ```
 
 ## Serial Protocol
@@ -94,17 +114,32 @@ The ESP32 accepts commands over serial (115200 baud):
 btkb/
 ├── src/main.cpp           # ESP32 BLE keyboard firmware
 ├── python/
-│   ├── stt.py             # Real-time speech-to-text + emote triggers
-│   ├── fivem_driver.py    # FiveM slash command driver
-│   ├── bighead.py         # ESP32 serial connection handler
 │   ├── main.py            # Orchestrator entry point
-│   └── emotes.json        # Available emote list
+│   ├── config.json        # Configuration file
+│   ├── config_loader.py   # Config loading with defaults
+│   ├── vad.py             # Silero VAD voice detection
+│   ├── state_machine.py   # IDLE/TALKING state management
+│   ├── stt.py             # Audio capture (+ legacy STT)
+│   ├── fivem_driver.py    # FiveM slash command driver
+│   ├── bighead.py         # ESP32 serial connection
+│   └── emotes.json        # Available emote list (reference)
 ├── platformio.ini         # PlatformIO config
 └── CLAUDE.md              # This file
 ```
 
+## State Machine
+
+```
+IDLE ──(speech_start)──▶ TALKING ──(speech_end)──▶ idle_emote ──▶ IDLE
+                              │
+                         (timer: 4s)
+                              │
+                              ▼
+                      random emote
+```
+
 ## Known Limitations
 
-- Whisper "tiny" model trades accuracy for speed (~30-300ms latency)
-- FiveM console input works; direct gameplay controls (WASD) may not due to anti-cheat
-- Requires NVIDIA GPU with CUDA for real-time performance
+- VAD may trigger on loud background noise
+- ~300ms latency from speech to emote (serial + BLE + game)
+- FiveM console input works; direct gameplay controls may not due to anti-cheat

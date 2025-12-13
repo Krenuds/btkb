@@ -1,0 +1,15 @@
+{
+  "vad": {
+    "threshold": 0.5,
+    "min_speech_ms": 250,
+    "min_silence_ms": 500
+  },
+  "talking_mode": {
+    "cycle_interval": 4.0,
+    "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient", "yes", "no"],
+    "idle_emote": "wait"
+  },
+  "defaults": {
+    "emote_duration": 4.0
+  }
+}

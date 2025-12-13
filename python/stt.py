@@ -121,8 +121,22 @@ class RealtimeSTT:
 class AudioCapture:
     """Microphone capture via PyAudio."""
 
-    def __init__(self, callback, device_index=None):
-        self.callback = callback
+    def __init__(self, callback=None, callbacks=None, device_index=None):
+        """
+        Initialize audio capture.
+
+        Args:
+            callback: Single callback function (for backward compatibility)
+            callbacks: List of callback functions (preferred)
+            device_index: Audio device index (None for default)
+        """
+        # Support both single callback and list of callbacks
+        if callbacks is not None:
+            self.callbacks = list(callbacks)
+        elif callback is not None:
+            self.callbacks = [callback]
+        else:
+            self.callbacks = []
         self.device_index = device_index
         self.stream = None
         self.pa = None
@@ -147,7 +161,11 @@ class AudioCapture:
 
         def on_audio(in_data, frame_count, time_info, status):
             audio = np.frombuffer(in_data, dtype=np.int16).astype(np.float32) / 32768.0
-            self.callback(audio)
+            for cb in self.callbacks:
+                try:
+                    cb(audio)
+                except Exception as e:
+                    print(f"[AudioCapture] Callback error: {e}")
             return (None, pyaudio.paContinue)
 
         self.stream = self.pa.open(
