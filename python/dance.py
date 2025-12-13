@@ -27,11 +27,11 @@ def dance(port="COM9"):
     ser.readline()
     time.sleep(0.1)
 
-    # Press t to open console using raw HID scan code (0x17 = 't')
-    ser.write(b"RAWPRESS:0x17\n")
+    # Press t to open console
+    ser.write(b"PRESS:T\n")
     ser.readline()
-    time.sleep(0.05)
-    ser.write(b"RAWRELEASE:0x17\n")
+    time.sleep(0.1)  # Hold for 100ms
+    ser.write(b"RELEASE:T\n")
     ser.readline()
 
     # Wait 300ms for console to open
