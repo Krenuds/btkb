@@ -9,6 +9,9 @@ String inputBuffer = "";
 String originalBuffer = "";  // Preserve original case for TEXT command
 const int MAX_BUFFER_SIZE = 256;
 
+// Track connection state for automatic status reporting
+bool wasConnected = false;
+
 // Function declarations
 void processCommand(String command);
 void handleTextCommand(String text);
@@ -38,6 +41,17 @@ void setup() {
 }
 
 void loop() {
+    // Check for connection state changes and report automatically
+    bool isConnected = bleKeyboard.isConnected();
+    if (isConnected != wasConnected) {
+        wasConnected = isConnected;
+        if (isConnected) {
+            Serial.println("OK:CONNECTED");
+        } else {
+            Serial.println("OK:DISCONNECTED");
+        }
+    }
+
     // Read serial data
     while (Serial.available()) {
         char c = Serial.read();
