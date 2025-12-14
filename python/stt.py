@@ -30,21 +30,6 @@ SAMPLE_RATE = 16000
 CHUNK_DURATION = 0.5
 CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
 
-# Keyword -> emote mapping
-EMOTE_TRIGGERS = {
-    "dance": "dance", "dancing": "dance",
-    "sit": "sit", "sitting": "sit",
-    "wave": "waves", "waving": "waves",
-    "yes": "yes", "no": "no",
-    "think": "think2", "thinking": "think2",
-    "wait": "wait", "waiting": "wait",
-    "beg": "beg", "begging": "beg",
-    "argue": "argue", "arguing": "argue",
-    "punch": "punching", "punching": "punching",
-    "notepad": "notepad", "notes": "notepad",
-    "tie": "adjusttie", "impatient": "impatient",
-}
-
 
 class RealtimeSTT:
     """Real-time speech-to-text with CUDA GPU acceleration."""
@@ -184,43 +169,15 @@ class AudioCapture:
             self.pa.terminate()
 
 
-class EmoteTrigger:
-    """Matches keywords to emotes with cooldown."""
-
-    def __init__(self, fivem=None, cooldown=3.0):
-        self.fivem = fivem
-        self.cooldown = cooldown
-        self.last_emote = None
-        self.last_time = 0
-
-    def process(self, text):
-        """Process text and return triggered emote name, or None."""
-        for word in text.split():
-            word = word.strip(".,!?")
-            if word in EMOTE_TRIGGERS:
-                emote = EMOTE_TRIGGERS[word]
-                now = time.time()
-                if emote != self.last_emote or (now - self.last_time) >= self.cooldown:
-                    self.last_emote = emote
-                    self.last_time = now
-                    if self.fivem:
-                        self.fivem.emote(emote)
-                    return emote
-        return None
-
-
 def main():
-    """Test STT with optional emote trigger detection."""
-    emote_mode = "--emotes" in sys.argv
-
-    print("Bighead Real-Time STT" + (" (Emote Mode)" if emote_mode else ""))
+    """Test STT standalone."""
+    print("Bighead Real-Time STT")
     print("=" * 50)
 
     stt = RealtimeSTT(model_size="tiny")
     stt.start()
 
     capture = AudioCapture(callback=stt.feed)
-    trigger = EmoteTrigger() if emote_mode else None
 
     print("\nMicrophones:")
     for d in capture.list_devices():
@@ -234,14 +191,7 @@ def main():
             result = stt.get()
             if result:
                 text, latency = result
-                if trigger:
-                    emote = trigger.process(text)
-                    if emote:
-                        print(f"[{latency*1000:.0f}ms] '{text}' -> /e {emote}")
-                    else:
-                        print(f"[{latency*1000:.0f}ms] '{text}'")
-                else:
-                    print(f"[{latency*1000:.0f}ms] {text}")
+                print(f"[{latency*1000:.0f}ms] {text}")
     except KeyboardInterrupt:
         print("\nStopping...")
     finally:

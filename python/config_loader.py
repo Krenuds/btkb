@@ -9,17 +9,7 @@ import os
 
 # Default configuration (used when config.json is missing or incomplete)
 DEFAULTS = {
-    "vad": {
-        "threshold": 0.5,
-        "min_speech_ms": 250,
-        "min_silence_ms": 500,
-    },
-    "talking_mode": {
-        "cycle_interval": 4.0,
-        "emotes": ["think2", "argue", "what", "wait", "notepad", "impatient"],
-        "idle_emote": "wait",
-        "return_to_idle": True,
-    },
+    "toggle_word": "toggle",
     "keyword_triggers": {
         "cooldown": 3.0,
         "groups": [
@@ -69,16 +59,6 @@ def load_config(path: str = None) -> dict:
         print("Using default configuration.")
 
     return config
-
-
-def get_vad_config(config: dict) -> dict:
-    """Extract VAD-specific config."""
-    return config.get("vad", DEFAULTS["vad"])
-
-
-def get_talking_mode_config(config: dict) -> dict:
-    """Extract talking mode config."""
-    return config.get("talking_mode", DEFAULTS["talking_mode"])
 
 
 def get_keyword_config(config: dict) -> dict:

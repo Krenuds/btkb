@@ -79,14 +79,12 @@ btkb/
 ├── src/main.cpp              # ESP32 BLE keyboard firmware
 ├── python/
 │   ├── main.py               # Orchestrator entry point
-│   ├── config.json           # Configuration
+│   ├── config.json           # Configuration (keyword triggers)
 │   ├── config_loader.py      # Config loading with defaults
 │   ├── keyword_matcher.py    # STT keyword -> emote matching
 │   ├── stt.py                # Whisper STT + audio capture
-│   ├── vad.py                # Silero VAD (unused, kept for future)
 │   ├── fivem_driver.py       # FiveM slash command driver
-│   ├── bighead.py            # ESP32 serial connection
-│   └── emotes.json           # Available emote reference
+│   └── bighead.py            # ESP32 serial connection
 ├── platformio.ini            # PlatformIO config
 └── CLAUDE.md                 # This file
 ```
@@ -138,6 +136,6 @@ ESP32 accepts commands over serial (115200 baud):
 
 ## Future Improvements
 
-- Re-add VAD-triggered idle/cycling animations (configurable)
 - Add emote sequences (multiple emotes from one trigger)
 - WebSocket/direct input for lower latency
+- VAD-triggered idle animations (would need Silero VAD integration)
