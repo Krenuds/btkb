@@ -24,7 +24,6 @@
       {"triggers": ["fight", "defent"], "emotes": ["boxing", "boxing2"]},
       {"triggers": ["karate", "martial arts"], "emotes": ["karate", "karate2"]},
       {"triggers": ["surprise", "present"], "emotes": ["finger","finger2", "fuckyou"]},
-      {"triggers": ["finger two", "finger 2", "double finger"], "emotes": ["finger2"]},
       {"triggers": ["mental", "hypnotize"], "emotes": ["mindcontrol", "mindcontrol2", "mindcontrol3"]},
       {"triggers": ["drill", "drilling"], "emotes": ["drill"]},
       {"triggers": ["come"], "emotes": ["swatcome"]},
