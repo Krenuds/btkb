@@ -5,6 +5,10 @@ Sends slash commands to FiveM via the Bighead ESP32 Bluetooth keyboard.
 Primarily used for emotes (/e dance, /e sit3, etc.) but supports any slash command.
 """
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "python"))
+
 import time
 import pyperclip
 

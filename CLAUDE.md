@@ -2,140 +2,90 @@
 
 ## Project Overview
 
-**Bighead** is a voice-controlled emote system for FiveM. Say specific keywords to trigger emotes via speech recognition.
+**Bighead** is an ESP32-based Bluetooth keyboard controlled via serial commands. It bridges any serial-capable application to any Bluetooth-enabled device.
 
 ## Architecture
 
 ```
-┌─────────────────┐     ┌───────────────┐     ┌─────────────────┐
-│  AudioCapture   │────▶│  Whisper STT  │────▶│ KeywordMatcher  │
-│   (PyAudio)     │     │               │     │                 │
-└─────────────────┘     └───────────────┘     └────────┬────────┘
-                                                       │
-                                              keyword match?
-                                                       │
-                                                       ▼
-                                              ┌─────────────────┐
-                                              │   FiveMDriver   │───▶ FiveM
-                                              │   (clipboard)   │
-                                              └────────┬────────┘
-                                                       │
-                                                       ▼
-                                              ┌─────────────────┐
-                                              │   ESP32 BLE     │───▶ Game
-                                              │   Keyboard      │
-                                              └─────────────────┘
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Your App   │────▶│   ESP32     │────▶│   Target    │
+│  (Serial)   │ USB │ (BLE HID)   │ BT  │   Device    │
+└─────────────┘     └─────────────┘     └─────────────┘
 ```
-
-### Keyword-Only System
-
-Say a keyword → emote plays. No keyword → nothing happens. Simple.
-
-### Voice Toggle
-
-The system starts **paused** by default. Say "toggle" to activate/deactivate:
-- **Paused**: STT still listens but keyword triggers are ignored
-- **Active**: Keywords trigger emotes
-
-## Quick Start
-
-```bash
-cd python
-python main.py           # Full system with ESP32
-python main.py --test    # Test mode without hardware
-```
-
-Say "toggle" to activate the system, then say keywords to trigger emotes.
-
-## Configuration
-
-Edit `python/config.json`:
-
-```json
-{
-  "toggle_word": "toggle",
-  "keyword_triggers": {
-    "cooldown": 3.0,
-    "groups": [
-      {"triggers": ["yes", "yeah", "yep", "yup"], "emotes": ["yes"]},
-      {"triggers": ["no", "nope", "nah"], "emotes": ["no", "noway", "forgetit"]}
-    ]
-  }
-}
-```
-
-### Config Reference
-
-| Section | Key | Description |
-|---------|-----|-------------|
-| (root) | `toggle_word` | Word to activate/deactivate system (default: "toggle") |
-| `keyword_triggers` | `cooldown` | Seconds before same keyword group can trigger again |
-| `keyword_triggers` | `groups` | Array of trigger-word to emote mappings |
 
 ## Project Structure
 
 ```
 btkb/
-├── src/main.cpp              # ESP32 BLE keyboard firmware
+├── src/main.cpp           # ESP32 firmware (the product)
 ├── python/
-│   ├── main.py               # Orchestrator entry point
-│   ├── config.json           # Configuration (keyword triggers)
-│   ├── config_loader.py      # Config loading with defaults
-│   ├── keyword_matcher.py    # STT keyword -> emote matching
-│   ├── stt.py                # Whisper STT + audio capture
-│   ├── fivem_driver.py       # FiveM slash command driver
-│   └── bighead.py            # ESP32 serial connection
-├── platformio.ini            # PlatformIO config
-└── CLAUDE.md                 # This file
+│   └── bighead.py         # Python SDK
+├── plugins/
+│   └── fivem-voice/       # Example: voice-controlled FiveM emotes
+├── platformio.ini
+└── README.md
 ```
-
-## Dependencies
-
-```bash
-pip install faster-whisper pyaudio numpy pyperclip pyserial torch
-```
-
-**CUDA (recommended)**: For GPU-accelerated STT
-```bash
-pip install nvidia-cudnn-cu12==9.1.0.70
-```
-
-## Hardware
-
-| Component | Details |
-|-----------|---------|
-| ESP32 | BLE keyboard, device name "Bighead" |
-| Serial | 115200 baud, auto-detected COM port |
-| GPU | NVIDIA with CUDA for Whisper STT (CPU fallback available) |
 
 ## Build Commands
 
 | Command | Description |
 |---------|-------------|
-| `pio run` | Build ESP32 firmware |
+| `pio run` | Build firmware |
 | `pio run --target upload` | Flash to ESP32 |
-| `python main.py` | Run full system |
-| `python main.py --test` | Test without ESP32 |
+| `pio device monitor` | Serial monitor |
 
 ## Serial Protocol
 
-ESP32 accepts commands over serial (115200 baud):
+**115200 baud**, newline-terminated commands.
+
+### Commands
 
 | Command | Description |
 |---------|-------------|
 | `KEY:X` | Press and release key |
 | `PRESS:X` / `RELEASE:X` | Hold/release key |
-| `TEXT:abc` | Type text (25ms/char) |
+| `RELEASEALL` | Release all keys |
+| `TEXT:abc` | Type string (25ms/char) |
+| `MEDIA:PLAY` | Media keys (PLAY, PAUSE, NEXT, PREV, VOLUP, VOLDOWN, MUTE) |
+| `RAW:0x17` | Raw HID scancode (hex or decimal) |
+| `DELAY:100` | Wait N ms on device |
 | `STATUS` | Check BLE connection |
 
-## Known Limitations
+### Keys
 
-- STT latency: ~30-50ms with GPU, higher on CPU
-- Total latency: ~300ms (STT + serial + BLE + game input)
-- FiveM console input works; direct gameplay controls may not due to anti-cheat
+- Basic: `ENTER`, `TAB`, `SPACE`, `BACKSPACE`, `DELETE`, `ESC`
+- Arrows: `UP`, `DOWN`, `LEFT`, `RIGHT`
+- Modifiers: `CTRL`, `SHIFT`, `ALT`, `WIN` (+ right variants: `RCTRL`, etc.)
+- Function: `F1`-`F12`
+- Navigation: `HOME`, `END`, `PAGEUP`, `PAGEDOWN`, `INSERT`
+- Single chars: `A`-`Z`, `0`-`9`
 
-## Future Improvements
+### Responses
 
-- Add emote sequences (multiple emotes from one trigger)
-- WebSocket/direct input for lower latency
-- VAD-triggered idle animations (would need Silero VAD integration)
+- `OK:CONNECTED` / `OK:DISCONNECTED` - BLE status
+- `OK:TYPED`, `OK:KEY_SENT`, `OK:KEY_PRESSED`, `OK:KEY_RELEASED` - Success
+- `ERROR:NOT_CONNECTED` - BLE not paired
+- `ERROR:INVALID_KEYCODE` - Unknown key name
+
+## Python SDK
+
+```python
+from bighead import Bighead
+
+with Bighead() as bh:
+    bh.text("Hello")
+    bh.key("ENTER")
+    bh.press("CTRL")
+    bh.key("V")
+    bh.release("CTRL")
+```
+
+Auto-detects CP210x, CH340, FTDI chips. Manual: `Bighead(port="COM9")`.
+
+## Hardware
+
+- Any ESP32 dev board
+- USB for power + serial
+- BLE range ~10m
+
+Device appears as "Bighead" in Bluetooth settings.
