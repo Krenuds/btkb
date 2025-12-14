@@ -1,22 +1,5 @@
 {
   "toggle_word": "toggle",
-  "vad": {
-    "threshold": 0.5,
-    "min_speech_ms": 250,
-    "min_silence_ms": 2000
-  },
-  "talking_mode": {
-    "cycle_interval": 4.0,
-    "emotes": [
-      "hi",
-      "what",
-      "yes",
-      "beg",
-      "shrug",
-      "why"],
-    "idle_emote": "wait11",
-    "return_to_idle": false
-  },
   "keyword_triggers": {
     "cooldown": 3.0,
     "groups": [
