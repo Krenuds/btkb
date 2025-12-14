@@ -1,6 +1,6 @@
 # Bighead
 
-A programmable ESP32-based Bluetooth keyboard that you control via serial commands. Send commands from any application to simulate keyboard input on any connected device.
+A programmable ESP32-based Bluetooth keyboard that you control via serial commands. Send commands from any application to simulate HID keyboard input on any connected device.
 
 ## What It Does
 
