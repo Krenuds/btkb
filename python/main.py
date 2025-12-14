@@ -51,6 +51,31 @@ class VoiceEmoteOrchestrator:
         self.state_machine = None
         self.audio_capture = None
 
+        # Toggle state - when paused, VAD and keywords are ignored
+        self._paused = True  # Start paused, say "toggle" to activate
+        self._toggle_word = self.config.get("toggle_word", "toggle")
+
+    def _on_speech_start(self):
+        """VAD callback wrapper - only triggers when not paused."""
+        if not self._paused:
+            self.state_machine.on_speech_start()
+
+    def _on_speech_end(self):
+        """VAD callback wrapper - only triggers when not paused."""
+        if not self._paused:
+            self.state_machine.on_speech_end()
+
+    def _toggle(self):
+        """Toggle the system on/off."""
+        self._paused = not self._paused
+        status = "PAUSED" if self._paused else "ACTIVE"
+        print(f"\n[{time.time():.3f}] [TOGGLE] System is now {status}")
+        print("=" * 60)
+
+        if self._paused and self.state_machine:
+            # Force back to idle when pausing
+            self.state_machine.stop()
+
     def start(self):
         """Initialize and start all components."""
         print("=" * 60)
@@ -79,8 +104,8 @@ class VoiceEmoteOrchestrator:
         vad_config = get_vad_config(self.config)
         self.vad = VADEngine(
             vad_config,
-            on_speech_start=self.state_machine.on_speech_start,
-            on_speech_end=self.state_machine.on_speech_end,
+            on_speech_start=self._on_speech_start,
+            on_speech_end=self._on_speech_end,
         )
         self.vad.load_model()
 
@@ -111,7 +136,8 @@ class VoiceEmoteOrchestrator:
         self.audio_capture.start()
 
         print("\n" + "=" * 60)
-        print("Ready! Speak to trigger emotes. Press Ctrl+C to stop.")
+        print(f"Ready! Say '{self._toggle_word}' to activate. Press Ctrl+C to stop.")
+        print("System starts PAUSED - voice commands are ignored until toggled.")
         print("=" * 60 + "\n")
 
     def run(self):
@@ -122,6 +148,18 @@ class VoiceEmoteOrchestrator:
                 result = self.stt.get(timeout=0.1)
                 if result:
                     text, latency = result
+                    text_lower = text.lower()
+
+                    # Check for toggle word (always active, even when paused)
+                    if self._toggle_word in text_lower:
+                        print(f"[{time.time():.3f}] [STT] '{text}' ({latency*1000:.0f}ms)")
+                        self._toggle()
+                        continue
+
+                    # Skip keyword processing if paused
+                    if self._paused:
+                        continue
+
                     # Check for keyword triggers
                     emote = self.keyword_matcher.match(text)
                     if emote:

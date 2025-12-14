@@ -41,6 +41,12 @@
 1. **Keywords (Priority)**: Say "yes", "yeah", "no", "nope" etc. to trigger specific emotes instantly
 2. **Fallback Cycling**: While talking, random emotes cycle every ~4 seconds if no keywords detected
 
+### Voice Toggle
+
+The system starts **paused** by default. Say "toggle" to activate/deactivate:
+- **Paused**: STT still listens but VAD and keyword triggers are ignored
+- **Active**: Full emote system running
+
 ## Quick Start
 
 ```bash
@@ -49,12 +55,15 @@ python main.py           # Full system with ESP32
 python main.py --test    # Test mode without hardware
 ```
 
+Say "toggle" to activate the system, then speak to trigger emotes.
+
 ## Configuration
 
 Edit `python/config.json`:
 
 ```json
 {
+  "toggle_word": "toggle",
   "vad": {
     "threshold": 0.5,
     "min_speech_ms": 250,
@@ -79,6 +88,7 @@ Edit `python/config.json`:
 
 | Section | Key | Description |
 |---------|-----|-------------|
+| (root) | `toggle_word` | Word to activate/deactivate system (default: "toggle") |
 | `vad` | `threshold` | Speech detection sensitivity (0-1) |
 | `vad` | `min_speech_ms` | Milliseconds of speech before triggering |
 | `vad` | `min_silence_ms` | Milliseconds of silence before stopping |
