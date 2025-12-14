@@ -16,17 +16,26 @@
       {"triggers": ["sir", "ma'am", "commander", "boss"], "emotes": ["salute"]},
       {"triggers": ["stretch"], "emotes": ["stretch"]},
       {"triggers": ["shine", "torch", "flashlight"], "emotes": ["shinetorch"]},
-      {"triggers": ["high five", "high 5"], "emotes": ["high5"]},
+      {"triggers": ["five"], "emotes": ["high5"]},
       {"triggers": ["slap", "behind"], "emotes": ["slap"]},
-      {"triggers": ["fuck you", "fuck off", "screw you"], "emotes": ["fuckyou"]},
-      {"triggers": ["piss", "pee", "urinate"], "emotes": ["piss"]},
-      {"triggers": ["maybe"], "emotes": ["shrug3"]},
+      {"triggers": ["piss", "leak", "urinate"], "emotes": ["piss"]},
+      {"triggers": ["maybe"], "emotes": ["shrug"]},
       {"triggers": ["dab"], "emotes": ["dab"]},
-      {"triggers": ["karate", "martial arts"], "emotes": ["karate"]},
-      {"triggers": ["surprise", "present"], "emotes": ["finger","finger2"]},
+      {"triggers": ["fight", "defent"], "emotes": ["boxing", "boxing2"]},
+      {"triggers": ["karate", "martial arts"], "emotes": ["karate", "karate2"]},
+      {"triggers": ["surprise", "present"], "emotes": ["finger","finger2", "fuckyou"]},
       {"triggers": ["finger two", "finger 2", "double finger"], "emotes": ["finger2"]},
       {"triggers": ["mental", "hypnotize"], "emotes": ["mindcontrol", "mindcontrol2", "mindcontrol3"]},
-      {"triggers": ["drill", "drilling"], "emotes": ["drill"]}
+      {"triggers": ["drill", "drilling"], "emotes": ["drill"]},
+      {"triggers": ["come"], "emotes": ["swatcome"]},
+      {"triggers": ["hold"], "emotes": ["swatfreeze"]},
+      {"triggers": ["rally"], "emotes": ["swatrally"]},
+      {"triggers": ["confirm"], "emotes": ["swatyes"]},
+      {"triggers": ["back"], "emotes": ["swatback"]},
+      {"triggers": ["forward", "front", "up"], "emotes": ["swatfwd"]},
+      {"triggers": ["left"], "emotes": ["swatleft"]},
+      {"triggers": ["right"], "emotes": ["swatright"]},
+      {"triggers": ["clear"], "emotes": ["c"]}
     ]
   }
 }
